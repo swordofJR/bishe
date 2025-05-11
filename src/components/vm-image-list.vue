@@ -10,19 +10,39 @@
           <Button type="ghost" @click="search"><i class="fa fa-search"></i></Button>
         </div>
         <Row type="flex" align="middle" class="page">
-          <span>Show</span>
+          <span>展示</span>
           <Input :max="40" :min="1" :number="true" v-model="showNum" class="input-number" @on-change=" updateDataShow "></Input>
-          <span class="margin-end">/ Page</span>
-          <span class="total">Total {{ data.length }}</span>
+          <span class="margin-end">/ 页</span>
+          <span class="total">合计 {{ data.length }}</span>
           <Page :total="data.length" :current="currentPage" :page-size="showNum" @on-change="pageChange"></Page>
         </Row>
       </Row>
     </Row>
     <Row class="image-list" :gutter="16">
       <Col :lg="6" :sm="12" class="vm-margin" v-for="item in dataShow" :key="item.id">
-        <VmCard :editable="true" :title="item.title" :img="item.img" :desc="item.desc" :detailUrl="item.detailUrl" :editUrl="item.editUrl" @delete-ok=" deleteOk(item) "></VmCard>
+        <VmCard :editable="true" :title="item.title" :img="item.img" :desc="item.desc" :detailUrl="item.detailUrl" @edit="handleEdit(item)"></VmCard>
       </Col>
     </Row>
+
+    <!-- Auction Dialog -->
+    <Modal v-model="showAuctionDialog" title="确认购买" @on-ok="handleAuctionConfirm">
+      <div class="auction-dialog-content">
+        <div class="item-info">
+          <img :src="selectedItem.img" class="item-image">
+          <div class="item-details">
+            <h3>{{ selectedItem.title }}</h3>
+            <p>{{ selectedItem.desc }}</p>
+          </div>
+        </div>
+        <div class="auction-form">
+          <Form :model="auctionForm" :label-width="100">
+            <FormItem label="出价金额">
+              <InputNumber v-model="auctionForm.bidAmount" :min="0.01" :step="0.1" placeholder="请输入出价金额"></InputNumber>
+            </FormItem>
+          </Form>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -36,7 +56,7 @@
     props: {
       title: {
         type: String,
-        default: 'Image List'
+        default: '数字藏品交易'
       },
       // origin data
       data: {
@@ -59,7 +79,12 @@
         keyword: '', // keyword for search
         dataShow: [], // data for showing
         showNum: 8, // number of item per page
-        currentPage: 1
+        currentPage: 1,
+        showAuctionDialog: false,
+        selectedItem: {},
+        auctionForm: {
+          bidAmount: 0.01
+        }
       }
     },
     methods: {
@@ -85,8 +110,16 @@
           }
         })
       },
-      deleteOk: function (data) {
-        this.$emit('delete-ok', data)
+      // deleteOk: function (data) {
+      //   this.$emit('delete-ok', data)
+      // },
+      handleEdit: function(item) {
+        this.selectedItem = item
+        this.showAuctionDialog = true
+      },
+      handleAuctionConfirm: function() {
+        this.$Message.success('购买成功！')
+        this.showAuctionDialog = false
       }
     },
     watch: {
@@ -99,3 +132,32 @@
     }
   }
 </script>
+
+<style scoped>
+.auction-dialog-content {
+  padding: 20px;
+}
+.item-info {
+  display: flex;
+  margin-bottom: 20px;
+}
+.item-image {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  margin-right: 20px;
+}
+.item-details {
+  flex: 1;
+}
+.item-details h3 {
+  margin: 0 0 10px 0;
+}
+.item-details p {
+  margin: 0;
+  color: #666;
+}
+.auction-form {
+  margin-top: 20px;
+}
+</style>

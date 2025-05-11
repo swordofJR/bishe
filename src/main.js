@@ -5,15 +5,15 @@ import App from './App'
 import router from './router'
 import iView from 'iview'
 import '!style-loader!css-loader!less-loader!./theme/index.less'
-
-Vue.config.productionTip = false
+import Web3 from 'web3'
+Vue.prototype.Web3 = Web3
 
 Vue.use(iView)
 
 /* eslint-disable no-new */
 new Vue({
-  el: '#app',
-  router,
-  template: '<App/>',
-  components: { App }
+    el: '#app',
+    router,
+    template: '<App/>',
+    components: { App }
 })

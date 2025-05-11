@@ -11,15 +11,15 @@
    </Row>
    <Row class="bottom" type="flex" justify="space-around">
      <Col span="8">
-       <span>Humidity</span>
+       <span>湿度</span>
        <p>{{ data.humidity }}</p>
      </Col>
      <Col span="8">
-       <span>Percip</span>
+       <span>PM</span>
        <p>{{ data.percip }}</p>
      </Col>
      <Col span="8">
-       <span>Winds</span>
+       <span>风级</span>
        <p>{{ data.winds }}</p>
      </Col>
    </Row>

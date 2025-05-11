@@ -16,73 +16,77 @@ import Loading from '@/pages/Loading'
 Vue.use(Router)
 
 export default new Router({
-  routes: [
-    {
-      path: '/',
-      component: Home,
-      children: [
+    routes: [
         {
-          path: '/',
-          name: 'Dashboard',
-          component: Dashboard
+            path: '/',
+            redirect: '/login'
         },
         {
-          path: 'widget',
-          name: 'Widget',
-          component: Widget
+            path: '/',
+            component: Home,
+            children: [
+                {
+                    path: '/',
+                    name: 'Dashboard',
+                    component: Dashboard
+                },
+                {
+                    path: 'widget',
+                    name: 'Widget',
+                    component: Widget
+                },
+                {
+                    path: 'panels',
+                    name: 'Panels',
+                    component: Panels
+                },
+                {
+                    path: 'editor',
+                    name: 'Editor',
+                    component: Editor
+                },
+                {
+                    path: 'imagelist',
+                    name: 'ImageList',
+                    component: ImageList
+                },
+                {
+                    path: 'basic-table',
+                    name: 'BasicTable',
+                    component: BasicTable
+                },
+                {
+                    path: 'editable-table',
+                    name: 'EditableTable',
+                    component: EditableTable
+                },
+                {
+                    path: 'charts',
+                    name: 'Charts',
+                    component: Charts
+                }
+            ]
         },
         {
-          path: 'panels',
-          name: 'Panels',
-          component: Panels
+            path: '/login',
+            name: 'Login',
+            components: {
+                blank: Login
+            }
         },
         {
-          path: 'editor',
-          name: 'Editor',
-          component: Editor
+            path: '/lockscreen',
+            name: 'Lockscreen',
+            components: {
+                blank: LockScreen
+            }
         },
         {
-          path: 'imagelist',
-          name: 'ImageList',
-          component: ImageList
-        },
-        {
-          path: 'basic-table',
-          name: 'BasicTable',
-          component: BasicTable
-        },
-        {
-          path: 'editable-table',
-          name: 'EditableTable',
-          component: EditableTable
-        },
-        {
-          path: 'charts',
-          name: 'Charts',
-          component: Charts
+            path: '/loading',
+            name: 'Loading',
+            components: {
+                blank: Loading
+            }
         }
-      ]
-    },
-    {
-      path: '/login',
-      name: 'Login',
-      components: {
-        blank: Login
-      }
-    },
-    {
-      path: '/lockscreen',
-      name: 'Lockscreen',
-      components: {
-        blank: LockScreen
-      }
-    },
-    {
-      path: '/loading',
-      name: 'Loading',
-      components: {
-        blank: Loading
-      }
-    }
-  ]
+    ]
 })

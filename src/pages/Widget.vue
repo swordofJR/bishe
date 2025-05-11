@@ -6,11 +6,11 @@
     </Row>
     <Row :gutter="16">
       <Col :lg="12">
-        <VmCircle class="demo-circle" title="Oil capacity (L)" usedName="Consumed" :usedValue="70" restName="Rest" :restValue="20">
+        <VmCircle class="demo-circle" title="信用值" usedName="交易总次数" :usedValue="70" restName="成功交易次数" :restValue="70">
         </VmCircle>
       </Col>
       <Col :lg="12">
-        <VmCircle class="demo-circle" title="Oil capacity (L)" usedName="Consumed" :usedValue="70" restName="Rest" :restValue="0">
+        <VmCircle class="demo-circle" title="交易完成率" usedName="好评数" :usedValue="70" restName="投诉" :restValue="0">
         </VmCircle>
       </Col>
     </Row>
@@ -55,28 +55,28 @@
         dataCards1: [
           {
             id: '1234567981',
-            title: 'Title',
+            title: '我的竞品1',
             img: require('@/assets/img/img-1.jpg'),
             desc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry,Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s',
             detailUrl: '#'
           },
           {
             id: '1234567982',
-            title: 'Title',
+            title: '我的竞品2',
             img: require('@/assets/img/img-2.jpg'),
             desc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry,Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s',
             detailUrl: '#'
           },
           {
             id: '1234567983',
-            title: 'Title',
+            title: '我的竞品3',
             img: require('@/assets/img/img-3.jpg'),
             desc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry,Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s',
             detailUrl: '#'
           },
           {
             id: '1234567984',
-            title: 'Title',
+            title: '我的竞品4',
             img: require('@/assets/img/img-4.jpg'),
             desc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry,Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s',
             detailUrl: '#'
@@ -85,51 +85,51 @@
         dataCards2: [
           {
             id: '6541231',
-            title: 'Title',
+            title: '我的竞品5',
             img: require('@/assets/img/img-l-1.jpg'),
             desc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry,Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s',
             detailUrl: '#'
           },
           {
             id: '6541232',
-            title: 'Title',
+            title: '我的竞品6',
             img: require('@/assets/img/img-l-2.jpg'),
             desc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry,Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s',
             detailUrl: '#'
           }
         ],
-        dataStateGroup: [
-          {
-            title: 'Page Views',
-            icon: 'fa fa-eye',
-            value: '666',
-            color: '#41b883'
-          },
-          {
-            title: 'New Users',
-            icon: 'fa fa-user',
-            value: '666',
-            color: '#428bca'
-          },
-          {
-            title: 'Comments',
-            icon: 'fa fa-pencil',
-            value: '666',
-            color: '#f60000'
-          },
-          {
-            title: 'Downloads',
-            icon: 'fa fa-download',
-            value: '666',
-            color: '#ffa000'
-          },
-          {
-            title: 'Images',
-            icon: 'fa fa-photo',
-            value: '666',
-            color: '#656565'
-          }
-        ],
+        // dataStateGroup: [
+        //   {
+        //     title: '浏览次数',
+        //     icon: 'fa fa-eye',
+        //     value: '666',
+        //     color: '#41b883'
+        //   },
+        //   {
+        //     title: '新用户',
+        //     icon: 'fa fa-user',
+        //     value: '666',
+        //     color: '#428bca'
+        //   },
+        //   {
+        //     title: '评价',
+        //     icon: 'fa fa-pencil',
+        //     value: '666',
+        //     color: '#f60000'
+        //   },
+        //   {
+        //     title: '询问',
+        //     icon: 'fa fa-download',
+        //     value: '666',
+        //     color: '#ffa000'
+        //   },
+        //   {
+        //     title: '照片',
+        //     icon: 'fa fa-photo',
+        //     value: '666',
+        //     color: '#656565'
+        //   }
+        // ],
         dataMessageCarouse1: [
           {
             title: 'Hello Everyone',

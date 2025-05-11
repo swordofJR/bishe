@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <Row :gutter="16">
+    <!-- <Row :gutter="16">
       <Col :lg="6" :md="12">
         <VmStateOverView color="#41b883" icon="fa fa-user" title="New Users" count="996"></VmStateOverView>
       </Col>
@@ -13,13 +13,13 @@
       <Col :lg="6" :md="12">
         <VmStateOverView color="#f60000" icon="fa fa-download" title="Downloads" count="9960"></VmStateOverView>
       </Col>
-    </Row>
+    </Row> -->
     <Row :gutter="16">
       <Col :lg="6">
         <VmUserPreview :brief="dataUserPreview.brief" :property="dataUserPreview.property"></VmUserPreview>
       </Col>
       <Col :lg="18">
-        <VmProgress title="Working Progress" :data="dataProgress"></VmProgress>
+        <VmProgress title="版权信息完整度" :data="dataProgress"></VmProgress>
       </Col>  
     </Row>
     <Row :gutter="16">
@@ -31,32 +31,32 @@
         <VmTabs icon="fa fa-user" title="Briefs" content-height="200px">
           <VmTabsItem label="Social" name="01">
             <div class="demo-news">
-              <h2>" Lorem ipsum dolor sit amet, consectetur adipiscing. "</h2>
+              <h2>"提交版权信息1"</h2>
             </div>
           </VmTabsItem>
           <VmTabsItem label="Business" name="02">
             <div class="demo-news">
-              <h2>" Phasellus massa urna, vehicula bibendum. "</h2>
+              <h2>"版权信息1通过"</h2>
             </div>
           </VmTabsItem>
           <VmTabsItem label="Entertainment" name="03">
             <div class="demo-news">
-              <h2>" Duis vitae dictum erat. In ut lorem turpis. "</h2>
+              <h2>"铸造数字藏品1"</h2>
             </div>
           </VmTabsItem>
           <VmTabsItem label="Sport" name="04">
             <div class="demo-news">
-              <h2>" Etiam sit amet urna feugiat, laoreet urna quis. "</h2>
+              <h2>"数字藏品1待交易"</h2>
             </div>
           </VmTabsItem>
           <VmTabsItem label="Health" name="05">
             <div class="demo-news">
-              <h2>" Fusce nec eleifend ligula. "</h2>
+              <h2>"数字藏品1交易成功"</h2>
             </div>
           </VmTabsItem>
           <VmTabsItem label="Education" name="06">
             <div class="demo-news">
-              <h2>" Fusce commodo nunc justo, id mattis. "</h2>
+              <h2>"提交版权信息2"</h2>
             </div>
           </VmTabsItem>
         </VmTabs>
@@ -91,89 +91,89 @@ export default {
       dataUserPreview: {
         brief: {
           photo: require('@/assets/img/photo.jpg'),
-          name: 'Angla Cool',
-          role: 'Administrator'
+          name: 'JR',
+          role: 'User'
         },
         property: [
           {
             icon: 'fa fa-user',
-            key: 'Sex',
-            value: 'M'
+            key: '性别',
+            value: '男'
           },
           {
-            icon: 'fa fa-heart',
-            key: 'Activity',
-            value: '9.8'
-          },
-          {
-            icon: 'fa fa-calendar',
-            key: 'Register',
-            value: '2017-8-9 8:00'
+            icon: 'fa fa-card',
+            key: '可兑换信用值',
+            value: '100'
           },
           {
             icon: 'fa fa-calendar',
-            key: 'Latest Login',
-            value: '2017-9-9 9:10'
+            key: '注册时间',
+            value: '2025-4-1 8:00'
+          },
+          {
+            icon: 'fa fa-calendar',
+            key: '上次登录时间',
+            value: '2025-4-8 10:10'
           }
         ]
       },
       dataProgress: [
         {
-          name: 'Jesse Luo',
-          tags: ['cool', 'funy'],
+          name: '版权1',
+          tags: ['艺术品', '收藏品'],
           value: 90
         },
         {
-          name: 'Angla Cool',
-          tags: ['nice', 'sexy', 'literature'],
+          name: '版权2',
+          tags: ['电子产品'],
           value: 30
         },
         {
-          name: 'lele Wang',
-          tags: ['mould', 'shy'],
+          name: '版权3',
+          tags: ['艺术品', '收藏品'],
           value: 80
         },
         {
-          name: 'Jesse Ca',
-          tags: ['funny', 'hardworking', 'learnd'],
+          name: '版权4',
+          tags: ['不动产'],
           value: 20
         },
         {
-          name: 'Jesse Lee',
-          tags: ['nice', 'mould'],
+          name: '版权5',
+          tags: ['电子产品', '收藏品'],
           value: 100
         }
       ],
       dataTimeline: [
         {
-          date: '2017-7-15',
+          date: '2025-4-1',
           time: '8:35 am',
-          content: 'Lorem ipsum dolor sit amet consiquest dio'
+          content: '提交版权信息1'
         },
         {
-          date: '2017-7-15',
+          date: '2025-4-2',
           time: '8:35 am',
-          content: 'Lorem ipsum dolor sit amet consiquest dio'
+          content: '铸造数字藏品1'
         },
         {
-          date: '2017-7-15',
+          date: '2025-4-2',
           time: '8:35 am',
-          content: 'Lorem ipsum dolor sit amet consiquest dio'
+          content: '数字藏品1待交易'
         },
         {
-          date: '2017-7-15',
+          date: '2025-4-2',
           time: '8:35 am',
-          content: 'Lorem ipsum dolor sit amet consiquest dio'
+          content: '数字藏品1交易成功'
         },
         {
-          date: '2017-7-15',
+          date: '2025-4-3',
           time: '8:35 am',
-          content: 'Lorem ipsum dolor sit amet consiquest dio'
+          content: '提交版权信息2'
         }
       ],
       dataWeather: {
-        location: 'Beijing',
-        weather: 'cloudy',
+        location: '成都',
+        weather: '多云',
         temprature: '30°',
         humidity: '56%',
         percip: '1.50in',

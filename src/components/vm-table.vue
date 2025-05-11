@@ -6,13 +6,13 @@
     <div class="panel-body">
       <Row type="flex" justify="space-between" class="control">
         <div class="table-style">
-          <h3>Stripe</h3>
+          <h3>条纹</h3>
           <i-switch v-model="showStripe" style="margin: 0 30px 0 10px"></i-switch>
-          <h3>Size</h3>
+          <h3>字体</h3>
           <Radio-group v-model="tableSize" type="button" style="margin-left: 10px">
-            <Radio label="large">Large</Radio>
-            <Radio label="default">Default</Radio>
-            <Radio label="small">Small</Radio>
+            <Radio label="large">大号</Radio>
+            <Radio label="default">默认</Radio>
+            <Radio label="small">小号</Radio>
           </Radio-group>
         </div>
         <div class="search-bar">
@@ -27,17 +27,17 @@
       <Table :stripe="showStripe" :size="tableSize" :columns="showColumns" :data="dataShow" @on-selection-change="selectChange"></Table>
       <Row type="flex" justify="space-between" class="footer">
         <div class="info-bar">
-          Show<Input-number class="input-number" v-model="showNum" :max="data.length" :min="1" @on-change=" updateDataShow ">{{ showNum }}</Input-number>/ Page
+          展示<Input-number class="input-number" v-model="showNum" :max="data.length" :min="1" @on-change=" updateDataShow ">{{ showNum }}</Input-number>/ 页
         </div>
         <div class="page">
-          <span class="total">Total {{ data.length }}</span>
+          <span class="total">共计 {{ data.length }}</span>
           <Page :total="data.length" :current="currentPage" :page-size="showNum" @on-change="pageChange"></Page>
         </div>
       </Row>
     </div>
     <Modal
         v-model="modalEdit"
-        title="Edit"
+        title="编辑"
         ok-text="OK"
         cancel-text="Cancel"
         v-on:on-ok="editOk">
@@ -49,7 +49,7 @@
     </Modal>
     <Modal
         v-model="modalAdd"
-        title="Add"
+        title="添加"
         ok-text="OK"
         cancel-text="Cancel"
         v-on:on-ok="addOk">
@@ -61,7 +61,7 @@
     </Modal>
     <Modal
         v-model="modalDelete"
-        title="Delete"
+        title="删除"
         ok-text="OK"
         cancel-text="Cancel"
         v-on:on-ok="deleteOk">

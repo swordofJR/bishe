@@ -1,15 +1,12 @@
 <template>
-  <div class="login">
-    <VmLogin>
-    </VmLogin>
-  </div>
+  <TraditionalLogin />
 </template>
 <script>
-  import VmLogin from '@/components/vm-login'
+import TraditionalLogin from '@/components/TraditionalLogin'
   export default {
     name: 'Login',
     components: {
-      VmLogin
+    TraditionalLogin
     }
   }
 </script>

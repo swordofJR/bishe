@@ -1,5 +1,5 @@
 <template>
-  <VmTable title="Editable Table" 
+  <VmTable title="修改我的版权信息" 
            type="edit" 
            :columns="dataColumns" 
            :data="dataTable"
@@ -45,97 +45,97 @@
         dataColumns: [
           {
             id: '20156541',
-            title: '编号',
+            title: 'id',
             key: 'id'
           },
           {
             id: '20156542',
-            title: '姓名',
+            title: '版权名称',
             key: 'name'
           },
           {
             id: '20156543',
-            title: '年龄',
+            title: '版权状态',
             key: 'age'
           },
           {
             id: '20156544',
-            title: '地址',
+            title: '版权描述',
             key: 'address'
           }
         ],
         dataTable: [
           {
-            id: '65416s843154',
-            name: '王小明',
-            age: 18,
-            address: '北京市朝阳区芍药居'
+            id: '0',
+            name: '版权1',
+            age: '审核中',
+            address: '版权1'
           },
           {
-            id: '6541684q6534',
-            name: '张小刚',
-            age: 25,
-            address: '北京市海淀区西二旗'
+            id: '1',
+            name: '版权2',
+            age: '审核中',
+            address: '版权2'
           },
           {
-            id: '65416843f194',
-            name: '李小红',
-            age: 30,
-            address: '上海市浦东新区世纪大道'
+            id: '2',
+            name: '版权3',
+            age: '通过审核',
+            address: '版权3'
           },
           {
-            id: '6541g6843150',
-            name: '周小伟',
-            age: 26,
-            address: '深圳市南山区深南大道'
+            id: '3',
+            name: '版权4',
+            age: '通过审核',
+            address: '版权4'
           },
           {
-            id: '6541h6843150',
-            name: '张小刚',
-            age: 25,
-            address: '北京市海淀区西二旗'
+            id: '4',
+            name: '版权5',
+            age: '通过审核',
+            address: '版权5'
           },
           {
-            id: '65416v843114',
-            name: '李小红',
-            age: 30,
-            address: '上海市浦东新区世纪大道'
+            id: '5',
+            name: '版权6',
+            age: '通过审核',
+            address: '版权6'
           },
           {
-            id: '65416843g114',
-            name: '周小伟',
-            age: 26,
-            address: '深圳市南山区深南大道'
+            id: '6',
+            name: '版权7',
+            age: '通过审核',
+            address: '版权7'
           },
           {
-            id: '254168431d54',
-            name: '李小红',
-            age: 30,
-            address: '上海市浦东新区世纪大道'
+            id: '7',
+            name: '版权8',
+            age: '通过审核',
+            address: '版权8'
           },
           {
-            id: '65456843d154',
-            name: '周小伟',
-            age: 26,
-            address: '深圳市南山区深南大道'
+            id: '8',
+            name: '版权9',
+            age: '通过审核',
+            address: '版权9'
           },
           {
-            id: '654168431d14',
-            name: '张小刚',
-            age: 25,
-            address: '北京市海淀区西二旗'
+            id: '9',
+            name: '版权10',
+            age: '通过审核',
+            address: '版权10'
           },
           {
-            id: '65416343s154',
-            name: '李小红',
-            age: 30,
-            address: '上海市浦东新区世纪大道'
+            id: '10',
+            name: '版权11',
+            age: '通过审核',
+            address: '版权11'
           },
           {
-            id: '65419843f154',
-            name: '周小伟',
-            age: 26,
-            address: '深圳市南山区深南大道'
+            id: '11',
+            name: '版权12',
+            age: '通过审核',
+            address: '版权12'
           }
         ]
       }
