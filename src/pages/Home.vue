@@ -111,14 +111,16 @@
                   Loading
                 </router-link>
               </Menu-item> -->
-          </Submenu>
+          <!-- </Submenu> -->
       </Menu>
     </div>
     <div class="main-content">
-      <router-view></router-view> 
+      <keep-alive>
+        <router-view v-if="$route.meta.keepAlive"></router-view>
+      </keep-alive>
+      <router-view v-if="!$route.meta.keepAlive"></router-view>
       <p class="vm-author"><a href="https://github.com/luosijie" target="_blank"></a></p> 
     </div>
-  </div>
   </div>
 </template>
 <script>

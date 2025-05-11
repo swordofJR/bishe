@@ -11,6 +11,10 @@
     <div class="card-desc panel-body">
       <h2>{{ title }}</h2>
       <p>{{ desc }}</p>
+      <div class="card-price" v-if="price">
+        <span class="price-label">价格：</span>
+        <span class="price-value">{{ price }} ETH</span>
+      </div>
       <a :href="detailUrl">
         <!-- more > -->
       </a>
@@ -29,23 +33,23 @@
         </div>
         <div class="modal-item">
           <span class="label">拥有者：</span>
-          <span class="value">andor</span>
+          <span class="value">{{ ownerAddress || 'Unknown' }}</span>
         </div>
         <div class="modal-item">
           <span class="label">描述：</span>
           <span class="value">{{ desc }}</span>
         </div>
         <div class="modal-item">
-          <span class="label">哈希值：</span>
-          <span class="value">{{ generateHash() }}</span>
+          <span class="label">类别：</span>
+          <span class="value">{{ category || 'Unknown' }}</span>
         </div>
         <div class="modal-item">
-          <span class="label">铸造时间：</span>
-          <span class="value">2025-04-08</span>
+          <span class="label">价格：</span>
+          <span class="value price-value">{{ price }} ETH</span>
         </div>
         <div class="modal-item">
           <span class="label">状态：</span>
-          <span class="value status-available">可交易</span>
+          <span class="value status-available">{{ status || '可交易' }}</span>
         </div>
       </div>
     </Modal>
@@ -82,6 +86,22 @@
       editUrl: {
         type: String,
         default: '#'
+      },
+      price: {
+        type: [Number, String],
+        default: null
+      },
+      ownerAddress: {
+        type: String,
+        default: ''
+      },
+      category: {
+        type: String,
+        default: ''
+      },
+      status: {
+        type: String,
+        default: 'LISTED'
       }
     },
     data: function () {
@@ -94,22 +114,18 @@
         this.showBuyModal = true;
       },
       handleBuy() {
-        this.$emit('buy', {
+        this.$emit('edit', {
           title: this.title,
           desc: this.desc,
-          hash: this.generateHash()
+          price: this.price,
+          ownerAddress: this.ownerAddress,
+          category: this.category,
+          status: this.status
         });
         this.showBuyModal = false;
-        this.$Message.success({
-          content: '交易成功！',
-          duration: 3
-        });
       },
       cancelBuy() {
         this.showBuyModal = false;
-      },
-      generateHash() {
-        return '0x' + Math.random().toString(16).substr(2, 64);
       }
     }
   }
@@ -136,6 +152,20 @@
     .status-available {
       color: #19be6b;
     }
+  }
+}
+
+.card-price {
+  margin-top: 12px;
+  font-weight: bold;
+  
+  .price-label {
+    color: #666;
+  }
+  
+  .price-value {
+    color: #ff9900;
+    font-size: 16px;
   }
 }
 </style>

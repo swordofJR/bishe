@@ -20,25 +20,39 @@
     </Row>
     <Row class="image-list" :gutter="16">
       <Col :lg="6" :sm="12" class="vm-margin" v-for="item in dataShow" :key="item.id">
-        <VmCard :editable="true" :title="item.title" :img="item.img" :desc="item.desc" :detailUrl="item.detailUrl" @edit="handleEdit(item)"></VmCard>
+        <VmCard 
+          :editable="true" 
+          :title="item.title" 
+          :img="item.img" 
+          :desc="item.desc" 
+          :detailUrl="item.detailUrl"
+          :price="item.price"
+          :ownerAddress="item.ownerAddress"
+          :category="item.category"
+          :status="item.status"
+          @edit="handleEdit(item)">
+        </VmCard>
       </Col>
     </Row>
 
     <!-- Auction Dialog -->
-    <Modal v-model="showAuctionDialog" title="确认购买" @on-ok="handleAuctionConfirm">
+    <Modal v-model="showAuctionDialog" title="确认购买" @on-ok="handleAuctionConfirm" :ok-text="loading ? '处理中...' : '确认购买'" :loading="loading" :maskClosable="!loading" :closable="!loading">
       <div class="auction-dialog-content">
         <div class="item-info">
           <img :src="selectedItem.img" class="item-image">
           <div class="item-details">
             <h3>{{ selectedItem.title }}</h3>
             <p>{{ selectedItem.desc }}</p>
+            <p v-if="selectedItem.price"><strong>价格: </strong>{{ selectedItem.price }} ETH</p>
+            <p><strong>类别: </strong>{{ selectedItem.category || '未分类' }}</p>
           </div>
         </div>
         <div class="auction-form">
           <Form :model="auctionForm" :label-width="100">
             <FormItem label="出价金额">
-              <InputNumber v-model="auctionForm.bidAmount" :min="0.01" :step="0.1" placeholder="请输入出价金额"></InputNumber>
+              <InputNumber v-model="auctionForm.bidAmount" :min="selectedItem.price" :step="0.1" placeholder="请输入出价金额"></InputNumber>
             </FormItem>
+            <p class="bidding-note">注: 出价必须大于或等于标价</p>
           </Form>
         </div>
       </div>
@@ -48,6 +62,11 @@
 
 <script>
   import VmCard from '@/components/vm-card'
+  import axios from 'axios'
+  import Web3 from 'web3'
+  import { abi } from '../contracts/CopyrightNFT.json'
+  import { contractAddress } from '../contracts/config'
+  
   export default {
     name: 'VmImageList',
     components: {
@@ -84,10 +103,31 @@
         selectedItem: {},
         auctionForm: {
           bidAmount: 0.01
-        }
+        },
+        web3: null,
+        contract: null,
+        loading: false
       }
     },
+    async created() {
+      await this.initWeb3()
+    },
     methods: {
+      async initWeb3() {
+        if (window.ethereum) {
+          try {
+            // 请求用户授权
+            await window.ethereum.request({ method: 'eth_requestAccounts' })
+            this.web3 = new Web3(window.ethereum)
+            // 初始化合约
+            this.contract = new this.web3.eth.Contract(abi, contractAddress)
+          } catch (error) {
+            console.error('Error initializing web3:', error)
+          }
+        } else {
+          console.warn('MetaMask not detected')
+        }
+      },
       updateDataShow: function () {
         let startPage = (this.currentPage - 1) * this.showNum
         let endPage = startPage + this.showNum
@@ -115,11 +155,122 @@
       // },
       handleEdit: function(item) {
         this.selectedItem = item
+        this.auctionForm.bidAmount = item.price || 0.01
         this.showAuctionDialog = true
       },
-      handleAuctionConfirm: function() {
-        this.$Message.success('购买成功！')
-        this.showAuctionDialog = false
+      async handleAuctionConfirm() {
+        if (!this.auctionForm.bidAmount || this.auctionForm.bidAmount < this.selectedItem.price) {
+          this.$Message.warning('出价必须大于或等于标价')
+          return false // 返回false阻止Modal关闭
+        }
+        this.loading = true
+        // 区块链交易结果标志
+        let blockchainSuccess = false
+        try {
+          // 1. 准备基础数据
+          const accounts = await this.web3.eth.getAccounts()
+          const account = accounts[0]
+          // 准备交易元数据
+          const metadata = {
+            id: this.selectedItem.id,
+            title: this.selectedItem.title,
+            price: this.auctionForm.bidAmount,
+            seller: this.selectedItem.ownerAddress,
+            buyer: account
+          }
+          // 2. 尝试区块链交易，但即使失败也继续进行数据库操作
+          try {
+            if (!this.web3 || !this.contract) {
+              await this.initWeb3()
+              if (!this.web3 || !this.contract) {
+                console.warn('MetaMask钱包未连接，将跳过区块链记录')
+              }
+            }
+            if (this.web3 && this.contract) {
+              const etherValue = this.web3.utils.toWei(this.auctionForm.bidAmount.toString(), 'ether')
+              console.log('尝试区块链交易...')
+              // 尝试检查合约中实际存在的方法
+              const methodNames = Object.keys(this.contract.methods)
+              console.log('合约中可用的方法:', methodNames)
+              // mint方法通常是最可靠的
+              if (methodNames.includes('mint')) {
+                console.log('找到 mint 方法，正在调用...')
+                await this.contract.methods
+                  .mint(account, JSON.stringify(metadata))
+                  .send({
+                    from: account,
+                    value: etherValue
+                  })
+                console.log('mint 方法调用成功')
+                blockchainSuccess = true
+              } else if (methodNames.includes('buyToken')) {
+                console.log('找到 buyToken 方法，正在调用...')
+                await this.contract.methods
+                  .buyToken(this.selectedItem.id, JSON.stringify(metadata))
+                  .send({
+                    from: account,
+                    value: etherValue
+                  })
+                console.log('buyToken 方法调用成功')
+                blockchainSuccess = true
+              } else if (methodNames.includes('purchase') || methodNames.includes('purchaseToken')) {
+                const method = methodNames.includes('purchase') ? 'purchase' : 'purchaseToken'
+                console.log(`找到 ${method} 方法，正在调用...`)
+                await this.contract.methods[method](this.selectedItem.id, JSON.stringify(metadata))
+                  .send({
+                    from: account,
+                    value: etherValue
+                  })
+                console.log(`${method} 方法调用成功`)
+                blockchainSuccess = true
+              } else if (methodNames.includes('buy') || methodNames.includes('buyCopyright')) {
+                const method = methodNames.includes('buy') ? 'buy' : 'buyCopyright'
+                console.log(`找到 ${method} 方法，正在调用...`)
+                await this.contract.methods[method](this.selectedItem.id, JSON.stringify(metadata))
+                  .send({
+                    from: account,
+                    value: etherValue
+                  })
+                console.log(`${method} 方法调用成功`)
+                blockchainSuccess = true
+              } else {
+                console.warn('找不到合约中适合的方法，将跳过区块链记录')
+              }
+            }
+          } catch (blockchainError) {
+            console.error('区块链交易失败:', blockchainError)
+            // 区块链交易失败，继续数据库操作
+          }
+          // 3. 无论区块链是否成功，都更新数据库（如果不是原始藏品）
+          if (!this.selectedItem.isOriginal) {
+            await axios.post(`/api/jdbc/copyright/${this.selectedItem.id}/purchase`, null, {
+              params: {
+                newOwnerAddress: account,
+                newUserId: localStorage.getItem('userId')
+              }
+            })
+            console.log(`版权 ${this.selectedItem.id} 状态已更新为 SOLD，新拥有者: ${account}`)
+            this.$Message.success(blockchainSuccess
+              ? `购买成功！${this.selectedItem.title} 状态已更新为 SOLD，交易已记录到区块链`
+              : `购买成功！${this.selectedItem.title} 状态已更新为 SOLD，但未能记录到区块链`)
+          } else {
+            // 对于原始藏品，只记录交易，不更新数据库
+            console.log(`原始藏品 ${this.selectedItem.id} 交易已${blockchainSuccess ? '' : '尝试'}记录到区块链`)
+            this.$Message.success(blockchainSuccess
+              ? `购买成功！${this.selectedItem.title} 已记录到区块链`
+              : `购买成功！${this.selectedItem.title} 处理完成，但未能记录到区块链`)
+          }
+          // 4. 从显示列表中移除已购买项
+          this.data = this.data.filter(item => item.id !== this.selectedItem.id)
+          this.updateDataShow()
+          this.showAuctionDialog = false
+        } catch (error) {
+          console.error('Purchase failed:', error)
+          this.$Message.error('购买失败: ' + (error.message || '未知错误'))
+          return false
+        } finally {
+          this.loading = false
+        }
       }
     },
     watch: {
@@ -159,5 +310,12 @@
 }
 .auction-form {
   margin-top: 20px;
+}
+
+.bidding-note {
+  color: #ff9900;
+  font-size: 12px;
+  margin-top: 5px;
+  padding-left: 100px;
 }
 </style>

@@ -33,7 +33,7 @@
       <FormItem label="版权类别" required>
         <Select v-model="formItem.category" style="width: 400px">
           <Option v-for="(cat, index) in categories" 
-                 :value="index" 
+                 :value="cat" 
                  :key="index">{{ cat }}</Option>
         </Select>
       </FormItem>
@@ -84,12 +84,14 @@
       @on-ok="handleSuccessOk"
       @on-cancel="handleSuccessOk">
       <p>您的版权信息已成功提交！</p>
+      <p>区块链交易哈希: {{ transactionHash }}</p>
     </Modal>
   </div>
 </template>
 
 <script>
 import Web3 from 'web3';
+import axios from 'axios';
 import { abi } from '../contracts/CopyrightNFT.json';
 import { contractAddress } from '../contracts/config';
 
@@ -98,17 +100,18 @@ export default {
     return {
       loading: false,
       showSuccessDialog: false,
+      transactionHash: '',
       categories: ['艺术品', '收藏品', '电子产品', '宠物', '游戏', '生活', '旅行'],
       previewImage: '',
       fileName: '',
+      fileObject: null,
       web3: null,
       contract: null,
       formItem: {
         title: '',
         description: '',
         imageData: null,
-        category: 0,
-        startTime: '',
+        category: '艺术品',
       }
     }
   },
@@ -116,7 +119,8 @@ export default {
     formValid() {
       return this.formItem.title &&
              this.formItem.description &&
-             this.formItem.imageData
+             this.formItem.imageData &&
+             this.fileObject
     }
   },
   async created() {
@@ -150,46 +154,88 @@ export default {
     },
 
     async submit() {
-      if (!this.web3 || !this.contract) {
-        this.$Message.error('请先连接MetaMask钱包');
+      if (!this.formValid) {
+        this.$Message.warning('请完善所有必填信息');
         return;
       }
-
       this.loading = true;
+      let blockchainSuccess = false;
       try {
+        // 1. 准备数据
         const accounts = await this.web3.eth.getAccounts();
         const account = accounts[0];
-
-        // 准备NFT元数据
         const metadata = {
           name: this.formItem.title,
           description: this.formItem.description,
           image: this.formItem.imageData,
-          category: this.categories[this.formItem.category],
-          timestamp: this.formItem.startTime,
+          category: this.formItem.category
         };
-
-        // 调用合约的mint函数
-        const result = await this.contract.methods
-          .mint(account, JSON.stringify(metadata))
-          .send({ from: account });
-
-        console.log('Transaction hash:', result.transactionHash);
-        // 在Ganache中查看交易
-        const transaction = await this.web3.eth.getTransaction(result.transactionHash);
-        console.log('Transaction details:', transaction);
-
+        // 2. 尝试区块链操作
+        try {
+          if (this.web3 && this.contract) {
+            console.log('尝试上链...');
+            const methodNames = Object.keys(this.contract.methods);
+            console.log('合约可用方法:', methodNames);
+            if (methodNames.includes('mint')) {
+              const result = await this.contract.methods
+                .mint(account, JSON.stringify(metadata))
+                .send({ from: account });
+              console.log('Transaction hash:', result.transactionHash);
+              this.transactionHash = result.transactionHash;
+              blockchainSuccess = true;
+            } else {
+              console.warn('找不到mint方法，跳过区块链记录');
+            }
+          }
+        } catch (blockchainError) {
+          console.error('区块链交易失败:', blockchainError);
+          // 区块链失败不影响后续数据库操作
+        }
+        // 3. 无论区块链成功与否，都上传到后端数据库
+        await this.uploadToBackend(account);
         this.showSuccessDialog = true;
-        this.$Message.success('版权信息已成功上链！');
+        this.$Message.success(blockchainSuccess
+          ? '版权信息已成功上链并保存到数据库！'
+          : '版权信息已保存到数据库，但未能记录到区块链！');
       } catch (error) {
-        console.error('Error submitting:', error);
-        this.$Message.error('提交失败：' + error.message);
+        console.error('提交失败:', error);
+        this.$Message.error('提交失败：' + (error.message || '未知错误'));
       } finally {
         this.loading = false;
       }
     },
 
+    async uploadToBackend(ownerAddress) {
+      try {
+        // 创建表单数据
+        const formData = new FormData();
+        formData.append('file', this.fileObject);
+        formData.append('title', this.formItem.title);
+        formData.append('description', this.formItem.description);
+        formData.append('category', this.formItem.category);
+        formData.append('ownerAddress', ownerAddress);
+        // 获取用户ID (如果有的话)
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          formData.append('userId', userId);
+        }
+        // 发送到后端
+        const response = await axios.post('/api/jdbc/copyright/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        console.log('Backend response:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Error uploading to backend:', error);
+        throw error;
+      }
+    },
+
     handleBeforeUpload(file) {
+      // 保存文件对象，用于后续上传到后端
+      this.fileObject = file;
       const reader = new FileReader();
       reader.onload = (e) => {
         this.previewImage = e.target.result;
@@ -214,11 +260,15 @@ export default {
         title: '',
         description: '',
         imageData: null,
-        category: 0,
-        startTime: '',
+        category: '艺术品',
       };
       this.previewImage = '';
       this.fileName = '';
+      this.fileObject = null;
+      this.transactionHash = '';
+
+      // 刷新版权列表
+      this.$router.push('/basic-table');
     }
   }
 }

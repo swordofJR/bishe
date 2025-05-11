@@ -139,39 +139,83 @@
         this.dataShow.splice(index, 1)
       },
       renderOperate: function (h, params) {
-        return h('div', [
-          h('Button', {
-            props: {
-              type: 'info',
-              size: 'small'
-            },
-            style: {
-              marginRight: '5px'
-            },
-            on: {
-              click: () => {
-                for (let i in params.row) {
-                  if (i !== '_index' && i !== '_rowKey') {
-                    this.dataEdit[i] = params.row[i]
+        if (this.type === 'edit') {
+          return h('div', [
+            h('Button', {
+              props: {
+                type: 'info',
+                size: 'small'
+              },
+              style: {
+                marginRight: '5px'
+              },
+              on: {
+                click: () => {
+                  for (let i in params.row) {
+                    if (i !== '_index' && i !== '_rowKey') {
+                      this.dataEdit[i] = params.row[i]
+                    }
                   }
+                  this.modalEdit = true
                 }
-                this.modalEdit = true
               }
-            }
-          }, 'Edit'),
-          h('Button', {
-            props: {
-              type: 'error',
-              size: 'small'
-            },
-            on: {
-              click: () => {
-                this.dataDelete.push(params.row)
-                this.modalDelete = true
+            }, 'Edit'),
+            h('Button', {
+              props: {
+                type: 'error',
+                size: 'small'
+              },
+              on: {
+                click: () => {
+                  this.dataDelete.push(params.row)
+                  this.modalDelete = true
+                }
               }
-            }
-          }, 'Delete')
-        ])
+            }, 'Delete')
+          ])
+        } else if (this.type === 'review') {
+          return h('div', [
+            h('Button', {
+              props: {
+                type: 'info',
+                size: 'small'
+              },
+              style: {
+                marginRight: '5px'
+              },
+              on: {
+                click: () => {
+                  this.$emit('details-ok', params.row)
+                }
+              }
+            }, '详情'),
+            h('Button', {
+              props: {
+                type: 'success',
+                size: 'small'
+              },
+              style: {
+                marginRight: '5px'
+              },
+              on: {
+                click: () => {
+                  this.$emit('approve-ok', params.row)
+                }
+              }
+            }, '通过'),
+            h('Button', {
+              props: {
+                type: 'error',
+                size: 'small'
+              },
+              on: {
+                click: () => {
+                  this.$emit('reject-ok', params.row)
+                }
+              }
+            }, '驳回')
+          ])
+        }
       },
       convertKey: function (value) {
         let returnValue = value
@@ -201,6 +245,14 @@
             title: '操作',
             key: 'action',
             width: 150,
+            align: 'center',
+            render: this.renderOperate
+          })
+        } else if (this.type === 'review') {
+          showColumn.push({
+            title: '操作',
+            key: 'action',
+            width: 200,
             align: 'center',
             render: this.renderOperate
           })

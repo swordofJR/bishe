@@ -1,43 +1,110 @@
 <template>
-  <VmTable title="修改我的版权信息" 
-           type="edit" 
-           :columns="dataColumns" 
-           :data="dataTable"
-           v-on:add-ok="add"
-           v-on:edit-ok="edit"
-           v-on:delete-ok="deletefn"
-           class="vm-margin">
-  </VmTable>
+  <div>
+    <VmTable title="审核版权申请" 
+             type="review" 
+             :columns="dataColumns" 
+             :data="dataTable"
+             v-on:details-ok="showDetails"
+             v-on:approve-ok="approveCopyright"
+             v-on:reject-ok="rejectCopyright"
+             class="vm-margin">
+    </VmTable>
+    
+    <!-- 版权详情弹窗 -->
+    <Modal v-model="detailsModal" title="版权详情" width="600">
+      <div v-if="selectedCopyright">
+        <div class="copyright-image" v-if="selectedCopyright.imgUrl">
+          <img :src="'/api/uploads/' + selectedCopyright.imgUrl" style="max-width: 100%; max-height: 300px;" />
+        </div>
+        <div class="copyright-info">
+          <p><strong>标题：</strong> {{ selectedCopyright.title }}</p>
+          <p><strong>描述：</strong> {{ selectedCopyright.description }}</p>
+          <p><strong>类别：</strong> {{ selectedCopyright.category }}</p>
+          <p><strong>状态：</strong> {{ selectedCopyright.status }}</p>
+          <p><strong>拥有者地址：</strong> {{ selectedCopyright.ownerAddress }}</p>
+          <p><strong>拥有者ID：</strong> {{ selectedCopyright.userId }}</p>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="primary" @click="detailsModal = false">关闭</Button>
+      </div>
+    </Modal>
+    
+    <!-- 驳回原因弹窗 -->
+    <Modal v-model="rejectModal" title="驳回原因">
+      <Input v-model="rejectReason" type="textarea" :rows="4" placeholder="请输入驳回原因..."></Input>
+      <div slot="footer">
+        <Button @click="rejectModal = false">取消</Button>
+        <Button type="error" @click="confirmReject">确认驳回</Button>
+      </div>
+    </Modal>
+  </div>
 </template>
 
 <script>
   import VmTable from '@/components/vm-table'
+  import axios from 'axios'
+  
   export default {
     name: 'EditableTable',
     components: {
       VmTable
     },
     methods: {
-      add: function (data) {
-        this.dataTable.unshift(data)
+      loadPendingCopyrights() {
+        axios.get('/api/jdbc/copyright/pending')
+          .then(response => {
+            this.dataTable = response.data
+          })
+          .catch(error => {
+            console.error('Failed to load pending copyrights:', error)
+          })
       },
-      edit: function (data) {
-        this.dataTable.forEach(function (elem) {
-          if (elem.id === data.id) {
-            for (let i in data) {
-              elem[i] = data[i]
-            }
+      showDetails(copyright) {
+        this.selectedCopyright = copyright
+        this.detailsModal = true
+      },
+      approveCopyright(copyright) {
+        axios.post(`/api/jdbc/copyright/${copyright.id}/review`, null, {
+          params: {
+            status: 'APPROVED'
           }
         })
+        .then(response => {
+          this.$Message.success('版权已通过审核')
+          this.loadPendingCopyrights()
+        })
+        .catch(error => {
+          this.$Message.error('审核操作失败')
+          console.error('Approval failed:', error)
+        })
       },
-      deletefn: function (data) {
-        for (let i = 0; i < this.dataTable.length; i++) {
-          for (let j = 0; j < data.length; j++) {
-            if (this.dataTable[i].id === data[j].id) {
-              this.dataTable.splice(i, 1)
-            }
-          }
+      rejectCopyright(copyright) {
+        this.copyrightToReject = copyright
+        this.rejectModal = true
+      },
+      confirmReject() {
+        if (!this.rejectReason) {
+          this.$Message.warning('请输入驳回原因')
+          return
         }
+        axios.post(`/api/jdbc/copyright/${this.copyrightToReject.id}/review`, null, {
+          params: {
+            status: 'REJECTED',
+            reason: this.rejectReason
+          }
+        })
+        .then(response => {
+          this.$Message.success('版权已驳回')
+          this.rejectModal = false
+          this.rejectReason = ''
+          this.copyrightToReject = null
+          this.loadPendingCopyrights()
+        })
+        .catch(error => {
+          this.$Message.error('驳回操作失败')
+          console.error('Rejection failed:', error)
+        })
       }
     },
     data () {
@@ -45,100 +112,49 @@
         dataColumns: [
           {
             id: '20156541',
-            title: 'id',
+            title: 'ID',
             key: 'id'
           },
           {
             id: '20156542',
-            title: '版权名称',
-            key: 'name'
+            title: '标题',
+            key: 'title'
           },
           {
             id: '20156543',
-            title: '版权状态',
-            key: 'age'
+            title: '状态',
+            key: 'status'
           },
           {
             id: '20156544',
-            title: '版权描述',
-            key: 'address'
+            title: '类别',
+            key: 'category'
           }
         ],
-        dataTable: [
-          {
-            id: '0',
-            name: '版权1',
-            age: '审核中',
-            address: '版权1'
-          },
-          {
-            id: '1',
-            name: '版权2',
-            age: '审核中',
-            address: '版权2'
-          },
-          {
-            id: '2',
-            name: '版权3',
-            age: '通过审核',
-            address: '版权3'
-          },
-          {
-            id: '3',
-            name: '版权4',
-            age: '通过审核',
-            address: '版权4'
-          },
-          {
-            id: '4',
-            name: '版权5',
-            age: '通过审核',
-            address: '版权5'
-          },
-          {
-            id: '5',
-            name: '版权6',
-            age: '通过审核',
-            address: '版权6'
-          },
-          {
-            id: '6',
-            name: '版权7',
-            age: '通过审核',
-            address: '版权7'
-          },
-          {
-            id: '7',
-            name: '版权8',
-            age: '通过审核',
-            address: '版权8'
-          },
-          {
-            id: '8',
-            name: '版权9',
-            age: '通过审核',
-            address: '版权9'
-          },
-          {
-            id: '9',
-            name: '版权10',
-            age: '通过审核',
-            address: '版权10'
-          },
-          {
-            id: '10',
-            name: '版权11',
-            age: '通过审核',
-            address: '版权11'
-          },
-          {
-            id: '11',
-            name: '版权12',
-            age: '通过审核',
-            address: '版权12'
-          }
-        ]
+        dataTable: [],
+        selectedCopyright: null,
+        detailsModal: false,
+        rejectModal: false,
+        rejectReason: '',
+        copyrightToReject: null
       }
+    },
+    mounted() {
+      this.loadPendingCopyrights()
+    },
+    activated() {
+      // 当组件被激活时也重新加载数据
+      this.loadPendingCopyrights()
     }
   }
 </script>
+
+<style scoped>
+.copyright-info p {
+  margin-bottom: 10px;
+}
+.copyright-image {
+  text-align: center;
+  margin-bottom: 20px;
+}
+</style>

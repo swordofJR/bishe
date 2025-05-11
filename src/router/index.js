@@ -38,7 +38,10 @@ export default new Router({
                 {
                     path: 'panels',
                     name: 'Panels',
-                    component: Panels
+                    component: Panels,
+                    meta: {
+                        title: '上传版权'
+                    }
                 },
                 {
                     path: 'editor',
@@ -53,12 +56,20 @@ export default new Router({
                 {
                     path: 'basic-table',
                     name: 'BasicTable',
-                    component: BasicTable
+                    component: BasicTable,
+                    meta: {
+                        keepAlive: true,
+                        title: '我的数字藏品版权'
+                    }
                 },
                 {
                     path: 'editable-table',
                     name: 'EditableTable',
-                    component: EditableTable
+                    component: EditableTable,
+                    meta: {
+                        keepAlive: true,
+                        title: '审核版权申请'
+                    }
                 },
                 {
                     path: 'charts',
