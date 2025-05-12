@@ -82,6 +82,12 @@
           },
           {
             id: '2.140714',
+            title: '所有者',
+            key: 'username',
+            sortable: true
+          },
+          {
+            id: '2.140715',
             title: '创建时间',
             key: 'createdTime',
             sortable: true,
@@ -90,7 +96,7 @@
             }
           },
           {
-            id: '2.140715',
+            id: '2.140716',
             title: '操作',
             key: 'action',
             width: 150,
@@ -102,7 +108,7 @@
                     type: 'primary',
                     size: 'small',
                     disabled: params.row.status !== 'APPROVED'
-                  },
+          },
                   on: {
                     click: () => {
                       this.openPublishModal(params.row)
@@ -119,17 +125,38 @@
         publishPrice: null,
         publishing: false,
         web3: null,
-        contract: null
+        contract: null,
+        currentUser: null,
+        refreshInterval: null
       }
     },
     async created() {
       await this.initWeb3()
+      // 从sessionStorage获取用户信息
+      const userStr = sessionStorage.getItem('user')
+      if (userStr) {
+        try {
+          this.currentUser = JSON.parse(userStr)
+        } catch (e) {
+          console.error('Failed to parse user info:', e)
+        }
+      }
     },
     mounted() {
-      this.loadAllCopyrights()
+      this.loadUserCopyrights()
+      // 设置定时刷新，每30秒更新一次数据
+      this.refreshInterval = setInterval(() => {
+        this.refreshData()
+      }, 30000)
     },
     activated() {
-      this.loadAllCopyrights()
+      this.loadUserCopyrights()
+    },
+    beforeDestroy() {
+      // 组件销毁前清除定时器
+      if (this.refreshInterval) {
+        clearInterval(this.refreshInterval)
+      }
     },
     methods: {
       async initWeb3() {
@@ -147,14 +174,43 @@
           console.warn('MetaMask not detected')
         }
       },
-      loadAllCopyrights() {
-        axios.get('/api/jdbc/copyright/all')
-          .then(response => {
-            this.dataTable = response.data
-          })
-          .catch(error => {
-            console.error('Failed to load copyrights:', error)
-          })
+      loadUserCopyrights() {
+        if (!this.currentUser) {
+          this.$Message.error('请先登录')
+          return
+        }
+        // 使用用户ID查询其版权（优先），包含用户名信息
+        if (this.currentUser.id) {
+          axios.get(`/api/jdbc/copyright/user-id/${this.currentUser.id}/with-username`)
+            .then(response => {
+              if (response.data && response.data.length > 0) {
+                this.dataTable = response.data
+              } else {
+                // 如果通过用户ID没有找到版权，尝试使用钱包地址
+                this.tryFetchByAddress()
+              }
+            })
+            .catch(error => {
+              console.error('通过用户ID加载版权失败:', error)
+              // 发生错误时尝试使用钱包地址
+              this.tryFetchByAddress()
+            })
+        } else {
+          // 如果没有用户ID，使用钱包地址
+          this.tryFetchByAddress()
+        }
+      },
+      tryFetchByAddress() {
+        if (this.currentUser && this.currentUser.address) {
+          axios.get(`/api/jdbc/copyright/user/${this.currentUser.address}/with-username`)
+            .then(response => {
+              this.dataTable = response.data
+            })
+            .catch(error => {
+              console.error('通过钱包地址加载版权失败:', error)
+              this.$Message.error('加载版权信息失败')
+            })
+        }
       },
       formatDateTime(dateTimeStr) {
         if (!dateTimeStr) return '';
@@ -200,65 +256,51 @@
               }
             }
             if (this.web3 && this.contract) {
-              const priceInWei = this.web3.utils.toWei(this.publishPrice.toString(), 'ether')
-              console.log('尝试区块链交易...')
-              // 查看合约中实际可用的方法
+              console.log('尝试区块链记录...')
               const methodNames = Object.keys(this.contract.methods)
-              console.log('合约中可用的方法:', methodNames)
-              // 尝试调用mint方法（从ABI看，这是最可能的方法）
-              if (methodNames.includes('mint')) {
-                console.log('找到 mint 方法，正在调用...')
-                await this.contract.methods
-                  .mint(account, JSON.stringify(metadata))
+              console.log('合约可用方法:', methodNames)
+              const supportedMethods = ['mint', 'listToken', 'listItem', 'list']
+              const method = supportedMethods.find(m => methodNames.includes(m))
+              if (method) {
+                console.log(`找到可用方法: ${method}，正在调用...`)
+                const result = await this.contract.methods[method](JSON.stringify(metadata))
                   .send({ from: account })
-                console.log('mint 方法调用成功')
-                blockchainSuccess = true
-              } else if (methodNames.includes('listToken')) {
-                console.log('找到 listToken 方法，正在调用...')
-                await this.contract.methods
-                  .listToken(this.selectedCopyright.id, JSON.stringify(metadata), priceInWei)
-                  .send({ from: account })
-                console.log('listToken 方法调用成功')
-                blockchainSuccess = true
-              } else if (methodNames.includes('createToken')) {
-                console.log('找到 createToken 方法，正在调用...')
-                await this.contract.methods
-                  .createToken(JSON.stringify(metadata), priceInWei)
-                  .send({ from: account })
-                console.log('createToken 方法调用成功')
-                blockchainSuccess = true
-              } else if (methodNames.includes('list') || methodNames.includes('listCopyright')) {
-                const method = methodNames.includes('list') ? 'list' : 'listCopyright'
-                console.log(`找到 ${method} 方法，正在调用...`)
-                await this.contract.methods[method](this.selectedCopyright.id, JSON.stringify(metadata), priceInWei)
-                  .send({ from: account })
-                console.log(`${method} 方法调用成功`)
+                console.log('区块链交易哈希:', result.transactionHash)
                 blockchainSuccess = true
               } else {
-                console.warn('找不到合约中适合的方法，将跳过区块链记录')
+                console.warn('未找到适用的合约方法，将跳过区块链记录')
               }
             }
           } catch (blockchainError) {
             console.error('区块链交易失败:', blockchainError)
-            // 区块链交易失败，但继续数据库操作
           }
-          // 3. 无论区块链是否成功，更新数据库
-          await axios.post(`/api/jdbc/copyright/${this.selectedCopyright.id}/list`, null, {
+          // 3. 无论区块链是否成功，都更新数据库
+          axios.post(`/api/jdbc/copyright/${this.selectedCopyright.id}/list`, null, {
             params: {
               price: this.publishPrice
             }
           })
-          this.$Message.success(blockchainSuccess
-            ? '版权已成功发布到交易市场，并记录在区块链上'
-            : '版权已发布到交易市场，但未能记录到区块链')
-          this.publishModal = false
-          this.loadAllCopyrights()
+          .then(response => {
+            this.$Message.success(blockchainSuccess
+              ? '版权已成功上架交易市场并写入区块链！'
+              : '版权已成功上架交易市场！')
+            this.publishModal = false
+            this.loadUserCopyrights()
+          })
+          .catch(error => {
+            this.$Message.error('版权上架失败')
+            console.error('API调用失败:', error)
+          })
         } catch (error) {
-          console.error('发布失败:', error)
-          this.$Message.error('发布失败: ' + (error.message || '未知错误'))
+          this.$Message.error('操作失败')
+          console.error('Unexpected error:', error)
         } finally {
           this.publishing = false
         }
+      },
+      refreshData() {
+        console.log('刷新用户版权信息数据...')
+        this.loadUserCopyrights()
       }
     }
   }

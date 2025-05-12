@@ -16,7 +16,9 @@ import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -87,6 +89,33 @@ public class CopyrightJdbcService {
         return jdbcTemplate.query(sql, new CopyrightRowMapper());
     }
 
+    public List<Map<String, Object>> getAllCopyrightsWithUsernames() {
+        String sql = "SELECT c.*, u.username FROM copyrights c LEFT JOIN users u ON c.user_id = u.id";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Map<String, Object> result = new HashMap<>();
+            Copyright copyright = new CopyrightRowMapper().mapRow(rs, rowNum);
+
+            // 将Copyright对象的所有属性复制到Map中
+            result.put("id", copyright.getId());
+            result.put("title", copyright.getTitle());
+            result.put("description", copyright.getDescription());
+            result.put("imgUrl", copyright.getImgUrl());
+            result.put("category", copyright.getCategory());
+            result.put("status", copyright.getStatus());
+            result.put("ownerAddress", copyright.getOwnerAddress());
+            result.put("userId", copyright.getUserId());
+            result.put("price", copyright.getPrice());
+            result.put("reason", copyright.getReason());
+            result.put("createdTime", copyright.getCreatedTime());
+            result.put("updatedTime", copyright.getUpdatedTime());
+
+            // 添加用户名
+            result.put("username", rs.getString("username"));
+
+            return result;
+        });
+    }
+
     public List<Copyright> getPendingCopyrights() {
         String sql = "SELECT * FROM copyrights WHERE status = 'PENDING'";
         return jdbcTemplate.query(sql, new CopyrightRowMapper());
@@ -97,9 +126,95 @@ public class CopyrightJdbcService {
         return jdbcTemplate.query(sql, new CopyrightRowMapper(), ownerAddress);
     }
 
+    public List<Map<String, Object>> getUserCopyrightsWithUsername(String ownerAddress) {
+        String sql = "SELECT c.*, u.username FROM copyrights c LEFT JOIN users u ON c.user_id = u.id WHERE c.owner_address = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Map<String, Object> result = new HashMap<>();
+            Copyright copyright = new CopyrightRowMapper().mapRow(rs, rowNum);
+
+            // 将Copyright对象的所有属性复制到Map中
+            result.put("id", copyright.getId());
+            result.put("title", copyright.getTitle());
+            result.put("description", copyright.getDescription());
+            result.put("imgUrl", copyright.getImgUrl());
+            result.put("category", copyright.getCategory());
+            result.put("status", copyright.getStatus());
+            result.put("ownerAddress", copyright.getOwnerAddress());
+            result.put("userId", copyright.getUserId());
+            result.put("price", copyright.getPrice());
+            result.put("reason", copyright.getReason());
+            result.put("createdTime", copyright.getCreatedTime());
+            result.put("updatedTime", copyright.getUpdatedTime());
+
+            // 添加用户名
+            result.put("username", rs.getString("username"));
+
+            return result;
+        }, ownerAddress);
+    }
+
+    public List<Copyright> getUserCopyrightsByUserId(Long userId) {
+        String sql = "SELECT * FROM copyrights WHERE user_id = ?";
+        return jdbcTemplate.query(sql, new CopyrightRowMapper(), userId);
+    }
+
+    public List<Map<String, Object>> getUserCopyrightsByUserIdWithUsername(Long userId) {
+        String sql = "SELECT c.*, u.username FROM copyrights c LEFT JOIN users u ON c.user_id = u.id WHERE c.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Map<String, Object> result = new HashMap<>();
+            Copyright copyright = new CopyrightRowMapper().mapRow(rs, rowNum);
+
+            // 将Copyright对象的所有属性复制到Map中
+            result.put("id", copyright.getId());
+            result.put("title", copyright.getTitle());
+            result.put("description", copyright.getDescription());
+            result.put("imgUrl", copyright.getImgUrl());
+            result.put("category", copyright.getCategory());
+            result.put("status", copyright.getStatus());
+            result.put("ownerAddress", copyright.getOwnerAddress());
+            result.put("userId", copyright.getUserId());
+            result.put("price", copyright.getPrice());
+            result.put("reason", copyright.getReason());
+            result.put("createdTime", copyright.getCreatedTime());
+            result.put("updatedTime", copyright.getUpdatedTime());
+
+            // 添加用户名
+            result.put("username", rs.getString("username"));
+
+            return result;
+        }, userId);
+    }
+
     public List<Copyright> getMarketplaceCopyrights() {
         String sql = "SELECT * FROM copyrights WHERE status = 'LISTED'";
         return jdbcTemplate.query(sql, new CopyrightRowMapper());
+    }
+
+    public List<Map<String, Object>> getMarketplaceCopyrightsWithUsernames() {
+        String sql = "SELECT c.*, u.username FROM copyrights c LEFT JOIN users u ON c.user_id = u.id WHERE c.status = 'LISTED'";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Map<String, Object> result = new HashMap<>();
+            Copyright copyright = new CopyrightRowMapper().mapRow(rs, rowNum);
+
+            // 将Copyright对象的所有属性复制到Map中
+            result.put("id", copyright.getId());
+            result.put("title", copyright.getTitle());
+            result.put("description", copyright.getDescription());
+            result.put("imgUrl", copyright.getImgUrl());
+            result.put("category", copyright.getCategory());
+            result.put("status", copyright.getStatus());
+            result.put("ownerAddress", copyright.getOwnerAddress());
+            result.put("userId", copyright.getUserId());
+            result.put("price", copyright.getPrice());
+            result.put("reason", copyright.getReason());
+            result.put("createdTime", copyright.getCreatedTime());
+            result.put("updatedTime", copyright.getUpdatedTime());
+
+            // 添加用户名
+            result.put("username", rs.getString("username"));
+
+            return result;
+        });
     }
 
     public Copyright getCopyright(Long id) {
@@ -123,6 +238,12 @@ public class CopyrightJdbcService {
     public Copyright purchaseCopyright(Long id, String newOwnerAddress, Long newUserId) {
         String sql = "UPDATE copyrights SET status = 'SOLD', owner_address = ?, user_id = ?, updated_time = ? WHERE id = ? AND status = 'LISTED'";
         int updated = jdbcTemplate.update(sql, newOwnerAddress, newUserId, LocalDateTime.now(), id);
+        return updated > 0 ? getCopyright(id) : null;
+    }
+
+    public Copyright delistCopyright(Long id) {
+        String sql = "UPDATE copyrights SET status = 'DELISTED', updated_time = ? WHERE id = ? AND status = 'LISTED'";
+        int updated = jdbcTemplate.update(sql, LocalDateTime.now(), id);
         return updated > 0 ? getCopyright(id) : null;
     }
 

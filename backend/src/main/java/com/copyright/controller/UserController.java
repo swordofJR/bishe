@@ -30,4 +30,33 @@ public class UserController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestParam String username, @RequestParam String password) {
+        try {
+            // 验证用户名是否已存在
+            if (userService.isUsernameExists(username)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "用户名已存在");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            User user = userService.register(username, password);
+            if (user != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", user.getId());
+                response.put("username", user.getUsername());
+                response.put("message", "注册成功");
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "注册失败");
+                return ResponseEntity.badRequest().body(error);
+            }
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "服务器错误: " + e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
 }

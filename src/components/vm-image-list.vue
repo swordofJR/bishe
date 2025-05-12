@@ -30,7 +30,11 @@
           :ownerAddress="item.ownerAddress"
           :category="item.category"
           :status="item.status"
-          @edit="handleEdit(item)">
+          :username="item.username"
+          :id="item.id"
+          :isAdmin="isAdmin"
+          @edit="handleEdit(item)"
+          @delist="handleDelist(item)">
         </VmCard>
       </Col>
     </Row>
@@ -91,6 +95,10 @@
             }
           ]
         }
+      },
+      isAdmin: {
+        type: Boolean,
+        default: false
       }
     },
     data: function () {
@@ -159,6 +167,20 @@
         this.showAuctionDialog = true
       },
       async handleAuctionConfirm() {
+        // 获取当前用户信息
+        const userStr = sessionStorage.getItem('user')
+        if (!userStr) {
+          this.$Message.warning('请先登录')
+          return false
+        }
+        const user = JSON.parse(userStr)
+        // 验证用户不能购买自己的藏品
+        // if (this.selectedItem.ownerAddress === user.address ||
+        //     (this.selectedItem.userId && user.id && this.selectedItem.userId === user.id)) {
+        //   this.$Message.warning('不能购买自己发布的数字藏品')
+        //   this.showAuctionDialog = false
+        //   return false
+        // }
         if (!this.auctionForm.bidAmount || this.auctionForm.bidAmount < this.selectedItem.price) {
           this.$Message.warning('出价必须大于或等于标价')
           return false // 返回false阻止Modal关闭
@@ -243,10 +265,27 @@
           }
           // 3. 无论区块链是否成功，都更新数据库（如果不是原始藏品）
           if (!this.selectedItem.isOriginal) {
+            // 从sessionStorage获取用户信息和用户ID
+            const userStr = sessionStorage.getItem('user')
+            let newUserId = null
+            if (userStr) {
+              try {
+                const user = JSON.parse(userStr)
+                newUserId = user.id
+                console.log('购买者用户ID:', newUserId)
+              } catch (e) {
+                console.error('解析用户信息失败:', e)
+              }
+            }
+            if (!newUserId) {
+              this.$Message.warning('获取用户ID失败，无法完成购买')
+              this.loading = false
+              return false
+            }
             await axios.post(`/api/jdbc/copyright/${this.selectedItem.id}/purchase`, null, {
               params: {
                 newOwnerAddress: account,
-                newUserId: localStorage.getItem('userId')
+                newUserId: newUserId
               }
             })
             console.log(`版权 ${this.selectedItem.id} 状态已更新为 SOLD，新拥有者: ${account}`)
@@ -264,6 +303,12 @@
           this.data = this.data.filter(item => item.id !== this.selectedItem.id)
           this.updateDataShow()
           this.showAuctionDialog = false
+          // 5. 触发购买成功事件，通知父组件刷新数据
+          this.$emit('purchase-success', {
+            itemId: this.selectedItem.id,
+            buyer: account,
+            buyerId: user && user.id ? user.id : null
+          })
         } catch (error) {
           console.error('Purchase failed:', error)
           this.$Message.error('购买失败: ' + (error.message || '未知错误'))
@@ -271,6 +316,31 @@
         } finally {
           this.loading = false
         }
+      },
+      handleDelist: function(item) {
+        this.$Modal.confirm({
+          title: '确认下架',
+          content: `确定要下架藏品 "${item.title}" 吗？下架后将不会显示在交易市场中。`,
+          onOk: async () => {
+            try {
+              // 调用下架API
+              await axios.post(`/api/jdbc/copyright/${item.id}/delist`)
+              // 从显示列表中移除该项
+              this.data = this.data.filter(i => i.id !== item.id)
+              this.updateDataShow()
+              // 触发下架成功事件
+              this.$emit('delist-success', {
+                itemId: item.id,
+                title: item.title
+              })
+              // 显示成功信息
+              this.$Message.success(`已成功下架藏品 "${item.title}"`)
+            } catch (error) {
+              console.error('下架失败:', error)
+              this.$Message.error('下架藏品失败: ' + (error.message || '未知错误'))
+            }
+          }
+        })
       }
     },
     watch: {

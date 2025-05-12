@@ -2,13 +2,13 @@
   <div>
     <VmTable title="审核版权申请" 
              type="review" 
-             :columns="dataColumns" 
-             :data="dataTable"
+           :columns="dataColumns" 
+           :data="dataTable"
              v-on:details-ok="showDetails"
              v-on:approve-ok="approveCopyright"
              v-on:reject-ok="rejectCopyright"
-             class="vm-margin">
-    </VmTable>
+           class="vm-margin">
+  </VmTable>
     
     <!-- 版权详情弹窗 -->
     <Modal v-model="detailsModal" title="版权详情" width="600">

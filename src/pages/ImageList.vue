@@ -1,5 +1,9 @@
 <template>
-  <VmImageList :data="dataImageList" class="vm-margin"></VmImageList>
+  <VmImageList :data="dataImageList" class="vm-margin" 
+    :isAdmin="isAdmin"
+    @purchase-success="handlePurchaseSuccess"
+    @delist-success="handleDelistSuccess">
+  </VmImageList>
 </template>
 
 <script>
@@ -19,6 +23,8 @@
         dataImageList: [],
         web3: null,
         contract: null,
+        refreshInterval: null,
+        isAdmin: false,
         defaultImage: require('@/assets/img/img-1.jpg'),
         defaultImages: [
           require('@/assets/img/img-1.jpg'),
@@ -102,12 +108,24 @@
     },
     async created() {
       await this.initWeb3()
+      // 检查当前用户是否为管理员
+      this.checkIfAdmin()
     },
     mounted() {
       this.loadMarketplaceCopyrights()
+      // 设置定时刷新，每30秒更新一次数据
+      this.refreshInterval = setInterval(() => {
+        this.refreshData()
+      }, 30000)
     },
     activated() {
       this.loadMarketplaceCopyrights()
+    },
+    beforeDestroy() {
+      // 组件销毁前清除定时器
+      if (this.refreshInterval) {
+        clearInterval(this.refreshInterval)
+      }
     },
     methods: {
       async initWeb3() {
@@ -125,33 +143,64 @@
           console.warn('MetaMask not detected')
         }
       },
+      checkIfAdmin() {
+        const userStr = sessionStorage.getItem('user')
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr)
+            this.isAdmin = user.role === 'admin'
+          } catch (e) {
+            console.error('解析用户信息失败:', e)
+          }
+        }
+      },
       loadMarketplaceCopyrights() {
-        axios.get('/api/jdbc/copyright/marketplace')
+        axios.get('/api/jdbc/copyright/marketplace-with-usernames')
           .then(response => {
             // 转换后端数据到VmImageList所需格式
             const dbItems = response.data.map(item => {
-              // 所有没有图片的项都使用img-1.jpg作为默认图片
               return {
                 id: item.id,
                 title: item.title,
-                img: require('@/assets/img/bg.jpg'),
+                img: require('@/assets/img/bg.jpg'), // 始终使用bg.jpg作为默认图片
                 desc: item.description,
                 price: item.price,
                 category: item.category,
                 ownerAddress: item.ownerAddress,
+                username: item.username || '未知用户',
                 detailUrl: '#',
                 status: item.status,
                 isOriginal: false
               }
-            })
+            }).filter(item => item.status === 'LISTED') // 确保只显示状态为LISTED的藏品
             // 合并原始收藏品和数据库项
             this.dataImageList = [...this.originalCollectibles, ...dbItems]
           })
           .catch(error => {
-            console.error('Failed to load marketplace copyrights:', error)
+            console.error('加载市场版权失败:', error)
             // 如果API调用失败，至少显示原始藏品
             this.dataImageList = [...this.originalCollectibles]
           })
+      },
+      refreshData() {
+        console.log('刷新市场版权信息数据...')
+        this.loadMarketplaceCopyrights()
+      },
+      handlePurchaseSuccess(event) {
+        // 处理购买成功事件
+        console.log('购买成功事件:', event)
+        // 立即刷新市场数据
+        this.loadMarketplaceCopyrights()
+        // 显示成功通知
+        this.$Message.success(`购买 ID:${event.itemId} 的数字藏品成功！`)
+      },
+      handleDelistSuccess(event) {
+        // 处理下架成功事件
+        console.log('下架成功事件:', event)
+        // 立即刷新市场数据
+        this.loadMarketplaceCopyrights()
+        // 显示成功通知
+        this.$Message.success(`下架 ID:${event.itemId} 的数字藏品成功！`)
       }
     }
   }

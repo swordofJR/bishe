@@ -15,9 +15,16 @@
         <span class="price-label">价格：</span>
         <span class="price-value">{{ price }} ETH</span>
       </div>
+      <div class="card-owner" v-if="username">
+        <span class="owner-label">所有者：</span>
+        <span class="owner-value">{{ username }}</span>
+      </div>
       <a :href="detailUrl">
         <!-- more > -->
       </a>
+      <div class="card-actions" v-if="isAdmin && status === 'LISTED'">
+        <Button type="error" size="small" @click="handleDelist">下架商品</Button>
+      </div>
     </div>
 
     <!-- 购买确认弹窗 -->
@@ -33,6 +40,10 @@
         </div>
         <div class="modal-item">
           <span class="label">拥有者：</span>
+          <span class="value">{{ username || '未知用户' }}</span>
+        </div>
+        <div class="modal-item">
+          <span class="label">钱包地址：</span>
           <span class="value">{{ ownerAddress || 'Unknown' }}</span>
         </div>
         <div class="modal-item">
@@ -66,6 +77,10 @@
       editable: {
         type: Boolean,
         default: false
+      },
+      id: {
+        type: [Number, String],
+        default: ''
       },
       title: {
         type: String,
@@ -102,7 +117,15 @@
       status: {
         type: String,
         default: 'LISTED'
+      },
+      isAdmin: {
+        type: Boolean,
+        default: false
       }
+    //   username: {
+    //     type: String,
+    //     default: '未知用户'
+    //   }
     },
     data: function () {
       return {
@@ -120,12 +143,19 @@
           price: this.price,
           ownerAddress: this.ownerAddress,
           category: this.category,
-          status: this.status
+          status: this.status,
+          username: this.username
         });
         this.showBuyModal = false;
       },
       cancelBuy() {
         this.showBuyModal = false;
+      },
+      handleDelist() {
+        this.$emit('delist', {
+          id: this.id,
+          title: this.title
+        });
       }
     }
   }
@@ -167,5 +197,23 @@
     color: #ff9900;
     font-size: 16px;
   }
+}
+
+.card-owner {
+  margin-top: 8px;
+  
+  .owner-label {
+    color: #666;
+    font-weight: bold;
+  }
+  
+  .owner-value {
+    color: #2d8cf0;
+  }
+}
+
+.card-actions {
+  margin-top: 12px;
+  text-align: right;
 }
 </style>

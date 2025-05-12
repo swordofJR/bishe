@@ -140,39 +140,39 @@
       },
       renderOperate: function (h, params) {
         if (this.type === 'edit') {
-          return h('div', [
-            h('Button', {
-              props: {
-                type: 'info',
-                size: 'small'
-              },
-              style: {
-                marginRight: '5px'
-              },
-              on: {
-                click: () => {
-                  for (let i in params.row) {
-                    if (i !== '_index' && i !== '_rowKey') {
-                      this.dataEdit[i] = params.row[i]
-                    }
+        return h('div', [
+          h('Button', {
+            props: {
+              type: 'info',
+              size: 'small'
+            },
+            style: {
+              marginRight: '5px'
+            },
+            on: {
+              click: () => {
+                for (let i in params.row) {
+                  if (i !== '_index' && i !== '_rowKey') {
+                    this.dataEdit[i] = params.row[i]
                   }
-                  this.modalEdit = true
                 }
+                this.modalEdit = true
               }
-            }, 'Edit'),
-            h('Button', {
-              props: {
-                type: 'error',
-                size: 'small'
-              },
-              on: {
-                click: () => {
-                  this.dataDelete.push(params.row)
-                  this.modalDelete = true
-                }
+            }
+          }, 'Edit'),
+          h('Button', {
+            props: {
+              type: 'error',
+              size: 'small'
+            },
+            on: {
+              click: () => {
+                this.dataDelete.push(params.row)
+                this.modalDelete = true
               }
-            }, 'Delete')
-          ])
+            }
+          }, 'Delete')
+        ])
         } else if (this.type === 'review') {
           return h('div', [
             h('Button', {

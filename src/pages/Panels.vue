@@ -125,6 +125,8 @@ export default {
   },
   async created() {
     await this.initWeb3();
+    // 检查用户权限
+    this.checkUserPermission();
   },
   methods: {
     async initWeb3() {
@@ -135,24 +137,54 @@ export default {
           this.web3 = new Web3(window.ethereum);
           // 初始化合约
           this.contract = new this.web3.eth.Contract(abi, contractAddress);
+          console.log('MetaMask连接成功，合约初始化完成');
+          // 获取当前账户
+          const accounts = await this.web3.eth.getAccounts();
+          if (accounts && accounts.length > 0) {
+            console.log('当前连接的钱包地址:', accounts[0]);
+          } else {
+            console.warn('未检测到连接的钱包地址');
+          }
           // 监听账户变化
           window.ethereum.on('accountsChanged', (accounts) => {
-            console.log('Account changed:', accounts);
+            console.log('钱包账户已变更:', accounts);
+            if (accounts.length === 0) {
+              this.$Message.warning('钱包已断开连接，请重新连接');
+            }
           });
           // 监听网络变化
           window.ethereum.on('chainChanged', (chainId) => {
-            console.log('Chain changed:', chainId);
+            console.log('区块链网络已变更:', chainId);
+            this.$Message.info('区块链网络已变更，页面将刷新');
             window.location.reload();
           });
         } catch (error) {
-          console.error('Error initializing web3:', error);
-          this.$Message.error('初始化区块链失败，请检查MetaMask');
+          console.error('初始化Web3失败:', error);
+          this.$Message.error('初始化区块链失败，请检查MetaMask是否正确安装并授权');
         }
       } else {
-        this.$Message.error('请安装MetaMask钱包');
+        console.warn('未检测到MetaMask插件');
+        this.$Message.warning('请安装MetaMask钱包插件以启用完整功能');
       }
     },
-
+    checkUserPermission() {
+      const userStr = sessionStorage.getItem('user');
+      if (!userStr) {
+        this.$Message.error('请先登录');
+        this.$router.push('/login');
+        return;
+      }
+      try {
+        const user = JSON.parse(userStr);
+        if (user.role !== 'admin' && user.role !== 'user') {
+          this.$Message.error('您没有上传版权的权限');
+          this.$router.push('/');
+        }
+      } catch (e) {
+        console.error('解析用户信息失败:', e);
+        this.$router.push('/login');
+      }
+    },
     async submit() {
       if (!this.formValid) {
         this.$Message.warning('请完善所有必填信息');
@@ -196,7 +228,7 @@ export default {
         this.showSuccessDialog = true;
         this.$Message.success(blockchainSuccess
           ? '版权信息已成功上链并保存到数据库！'
-          : '版权信息已保存到数据库，但未能记录到区块链！');
+          : '版权信息已保存！');
       } catch (error) {
         console.error('提交失败:', error);
         this.$Message.error('提交失败：' + (error.message || '未知错误'));
@@ -204,7 +236,6 @@ export default {
         this.loading = false;
       }
     },
-
     async uploadToBackend(ownerAddress) {
       try {
         // 创建表单数据
@@ -214,10 +245,18 @@ export default {
         formData.append('description', this.formItem.description);
         formData.append('category', this.formItem.category);
         formData.append('ownerAddress', ownerAddress);
-        // 获取用户ID (如果有的话)
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-          formData.append('userId', userId);
+        // 从sessionStorage获取用户信息
+        const userStr = sessionStorage.getItem('user');
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user.id) {
+              formData.append('userId', user.id);
+              console.log('添加用户ID到版权信息:', user.id);
+            }
+          } catch (e) {
+            console.error('解析用户信息失败:', e);
+          }
         }
         // 发送到后端
         const response = await axios.post('/api/jdbc/copyright/upload', formData, {
@@ -232,7 +271,6 @@ export default {
         throw error;
       }
     },
-
     handleBeforeUpload(file) {
       // 保存文件对象，用于后续上传到后端
       this.fileObject = file;
@@ -245,15 +283,12 @@ export default {
       reader.readAsDataURL(file);
       return false;
     },
-
     handleFormatError(file) {
       this.$Message.error('文件格式不正确，仅支持 JPG/PNG 格式');
     },
-
     handleSizeError(file) {
       this.$Message.error('文件大小超过2MB限制');
     },
-
     handleSuccessOk() {
       this.showSuccessDialog = false;
       this.formItem = {
@@ -266,7 +301,6 @@ export default {
       this.fileName = '';
       this.fileObject = null;
       this.transactionHash = '';
-
       // 刷新版权列表
       this.$router.push('/basic-table');
     }

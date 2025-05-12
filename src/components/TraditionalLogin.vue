@@ -16,6 +16,10 @@
             {{ loading ? '登录中...' : '登录' }}
           </button>
         </div>
+        <div class="form-group register-link">
+          <span>还没有账号？</span>
+          <router-link to="/register">注册</router-link>
+        </div>
         <div v-if="error" class="error">{{ error }}</div>
       </form>
     </div>
@@ -23,6 +27,8 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'TraditionalLogin',
   data() {
@@ -37,25 +43,32 @@ export default {
     handleLogin() {
       this.error = ''
       this.loading = true
-      // 模拟登录过程
-      setTimeout(() => {
-        // 检查用户名和密码是否匹配预设值
-        if (this.username === 'jr' && this.password === '123456') {
-          // 创建模拟用户信息
-          const user = {
-            id: 1,
-            username: 'jr',
-            address: '0x0000000000000000000000000000000000000000'
+      const params = new URLSearchParams()
+      params.append('username', this.username)
+      params.append('password', this.password)
+      axios.post('/api/user/login', params)
+        .then(response => {
+          const user = response.data
+          user.role = this.username === 'root' ? 'admin' : 'user'
+          sessionStorage.setItem('user', JSON.stringify(user))
+          if (user.role === 'admin') {
+            this.$router.push('/editable-table')
+          } else {
+            this.$router.push('/panels')
           }
-          // 保存到localStorage
-          localStorage.setItem('user', JSON.stringify(user))
-          // 跳转到面板页
-          this.$router.push('/panels')
-        } else {
-          this.error = '用户名或密码错误'
-        }
-        this.loading = false
-      }, 500) // 添加短暂延迟模拟网络请求
+        })
+        .catch(error => {
+          console.error('登录失败:', error)
+          if (error.response && error.response.data) {
+            console.error('错误详情:', error.response.data)
+            this.error = error.response.data.message || '登录失败，请检查用户名和密码'
+          } else {
+            this.error = '登录失败，服务器连接异常'
+          }
+        })
+        .finally(() => {
+          this.loading = false
+        })
     }
   }
 }
@@ -127,4 +140,17 @@ button[type="submit"]:disabled {
   margin-top: 10px;
   font-size: 14px;
 }
+.register-link {
+  text-align: center;
+  font-size: 14px;
+}
+.register-link a {
+  color: #409eff;
+  margin-left: 5px;
+  text-decoration: none;
+}
+.register-link a:hover {
+  text-decoration: underline;
+}
 </style>
+ 

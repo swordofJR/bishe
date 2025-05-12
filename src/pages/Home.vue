@@ -8,11 +8,11 @@
       <!-- <VmMsgPush style="margin-left:20px" :data="msgPushData"></VmMsgPush> -->
       <Dropdown class="login-info" placement="bottom-end">
         <Button type="ghost">
-            <img src="../assets/img/photo.jpg" height="30" alt="">JR
+            <img src="../assets/img/photo.jpg" height="30" alt="">{{ currentUser.username }}
             <Icon type="arrow-down-b"></Icon>
         </Button> 
         <Dropdown-menu slot="list">
-            <Dropdown-item divided><i class="fa fa-key"></i>退出登录</Dropdown-item>
+            <Dropdown-item divided @click="logout"><i class="fa fa-key"></i>退出登录</Dropdown-item>
             <Dropdown-item divided><i class="fa fa-cog"></i>用户信息</Dropdown-item>
         </Dropdown-menu>
       </Dropdown>
@@ -37,7 +37,7 @@
                 登录  
               </router-link>
           </Menu-item> -->
-          <Menu-item name="Panels">
+          <Menu-item name="Panels" v-if="isUser && !isAdmin">
               <router-link to="/panels">
                 <i class="fa fa-database"></i>
                 上传版权信息
@@ -49,7 +49,7 @@
                 Editor
               </router-link>
           </Menu-item> -->
-          <Menu-item name="ImageList">
+          <Menu-item name="ImageList" v-if="canAccessMarket">
               <router-link to="/imagelist">
                 <i class="fa fa-shopping-bag"></i>
                 数字藏品交易市场  
@@ -61,17 +61,28 @@
                 Charts  
               </router-link>
           </Menu-item> -->
-        <Menu-item name="BasicTable">
+          <Menu-item name="BasicTable" v-if="isUser && !isAdmin">
               <router-link to="/basic-table">
                 <i class="fa fa-id-card"></i>
                 我的数字藏品  
               </router-link>
           </Menu-item>
-
-          <Menu-item name="EditableTable">
+          <Menu-item name="EditableTable" v-if="isAdmin">
               <router-link to="/editable-table">
                 <i class="fa fa-id-card"></i>
-                审核版权信息  
+                版权审核信息  
+              </router-link>
+          </Menu-item>
+          <Menu-item name="AllCopyrights" v-if="isAdmin">
+              <router-link to="/all-copyrights">
+                <i class="fa fa-list"></i>
+                查看版权信息  
+              </router-link>
+          </Menu-item>
+          <Menu-item name="UserManagement" v-if="isAdmin">
+              <router-link to="/user-management">
+                <i class="fa fa-users"></i>
+                用户管理  
               </router-link>
           </Menu-item>
           <!-- <Submenu name="DataTable">
@@ -120,7 +131,7 @@
       </keep-alive>
       <router-view v-if="!$route.meta.keepAlive"></router-view>
       <p class="vm-author"><a href="https://github.com/luosijie" target="_blank"></a></p> 
-    </div>
+  </div>
   </div>
 </template>
 <script>
@@ -130,11 +141,49 @@ export default {
   components: {
     VmMsgPush
   },
+  computed: {
+    currentUser() {
+      return this.user || { username: '游客' }
+    },
+    isAdmin() {
+      return this.user && this.user.role === 'admin'
+    },
+    isUser() {
+      // 仅普通用户可以看到上传版权和我的数字藏品菜单
+      return this.user && this.user.role === 'user'
+    },
+    // 管理员和用户都可以看到交易市场
+    canAccessMarket() {
+      return this.user && (this.user.role === 'user' || this.user.role === 'admin')
+    }
+  },
   mounted: function () {
     this.activeName = this.$route.name
+    // 从sessionStorage获取用户信息，确保每个窗口有独立的会话
+    const userStr = sessionStorage.getItem('user')
+    if (userStr) {
+      try {
+        this.user = JSON.parse(userStr)
+        // 确保导航栏选中当前页面，不自动跳转
+        this.activeName = this.$route.name || (this.isAdmin ? 'EditableTable' : 'Panels')
+      } catch (e) {
+        console.error('Failed to parse user info:', e)
+        this.logout() // 解析失败时注销
+      }
+    } else {
+      // 没有用户信息则重定向到登录页
+      this.$router.push('/login')
+    }
+  },
+  methods: {
+    logout() {
+      sessionStorage.removeItem('user')
+      this.$router.push('/login')
+    }
   },
   data () {
     return {
+      user: null,
       activeName: 'Dashboard',
       msgPushData: [
         {

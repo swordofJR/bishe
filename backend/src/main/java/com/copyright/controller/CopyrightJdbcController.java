@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/jdbc/copyright")
@@ -47,6 +48,14 @@ public class CopyrightJdbcController {
     }
 
     /**
+     * 获取所有版权信息（包含用户名）
+     */
+    @GetMapping("/all-with-users")
+    public ResponseEntity<List<Map<String, Object>>> getAllCopyrightsWithUsers() {
+        return ResponseEntity.ok(copyrightJdbcService.getAllCopyrightsWithUsernames());
+    }
+
+    /**
      * 获取待审核的版权信息
      */
     @GetMapping("/pending")
@@ -63,6 +72,30 @@ public class CopyrightJdbcController {
     }
 
     /**
+     * 获取用户的版权信息，包含用户名
+     */
+    @GetMapping("/user/{address}/with-username")
+    public ResponseEntity<List<Map<String, Object>>> getUserCopyrightsWithUsername(@PathVariable String address) {
+        return ResponseEntity.ok(copyrightJdbcService.getUserCopyrightsWithUsername(address));
+    }
+
+    /**
+     * 获取用户的版权信息 (通过用户ID)
+     */
+    @GetMapping("/user-id/{userId}")
+    public ResponseEntity<List<Copyright>> getUserCopyrightsByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(copyrightJdbcService.getUserCopyrightsByUserId(userId));
+    }
+
+    /**
+     * 获取用户的版权信息 (通过用户ID)，包含用户名
+     */
+    @GetMapping("/user-id/{userId}/with-username")
+    public ResponseEntity<List<Map<String, Object>>> getUserCopyrightsByUserIdWithUsername(@PathVariable Long userId) {
+        return ResponseEntity.ok(copyrightJdbcService.getUserCopyrightsByUserIdWithUsername(userId));
+    }
+
+    /**
      * 获取市场上架的版权信息
      */
     @GetMapping("/marketplace")
@@ -71,15 +104,11 @@ public class CopyrightJdbcController {
     }
 
     /**
-     * 获取版权详情
+     * 获取市场上架的版权信息（包含用户名）
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<Copyright> getCopyright(@PathVariable Long id) {
-        Copyright copyright = copyrightJdbcService.getCopyright(id);
-        if (copyright != null) {
-            return ResponseEntity.ok(copyright);
-        }
-        return ResponseEntity.notFound().build();
+    @GetMapping("/marketplace-with-usernames")
+    public ResponseEntity<List<Map<String, Object>>> getMarketplaceCopyrightsWithUsernames() {
+        return ResponseEntity.ok(copyrightJdbcService.getMarketplaceCopyrightsWithUsernames());
     }
 
     /**
@@ -120,6 +149,32 @@ public class CopyrightJdbcController {
             @RequestParam String newOwnerAddress,
             @RequestParam(required = false) Long newUserId) {
         Copyright copyright = copyrightJdbcService.purchaseCopyright(id, newOwnerAddress, newUserId);
+        if (copyright != null) {
+            return ResponseEntity.ok(copyright);
+        }
+        return ResponseEntity.badRequest().build();
+    }
+
+    /**
+     * 获取版权详情
+     * 注意：这个端点必须放在最后，避免与其他路径冲突
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Copyright> getCopyright(@PathVariable Long id) {
+        Copyright copyright = copyrightJdbcService.getCopyright(id);
+        if (copyright != null) {
+            return ResponseEntity.ok(copyright);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * 下架版权
+     */
+    @PostMapping("/{id}/delist")
+    public ResponseEntity<Copyright> delistCopyright(
+            @PathVariable Long id) {
+        Copyright copyright = copyrightJdbcService.delistCopyright(id);
         if (copyright != null) {
             return ResponseEntity.ok(copyright);
         }
